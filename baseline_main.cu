@@ -146,15 +146,7 @@ int main(int argc, char **argv) {
     }
     //check gpu
 
-    cudaError_t cudaStatus;
-    int num = 0;
-    cudaStatus = cudaGetDeviceCount(&num);
-    std::cout << "Number of GPU: " << num << std::endl;
-    cudaDeviceProp prop;
-    if (num > 0) {
-        cudaGetDeviceProperties(&prop, 0);
-        std::cout << "Device: " << prop.name << std::endl;
-    }
+    check_GPU();
 
     int sample_number = atoi(argv[1]);
     std::string filename =  argv[2];

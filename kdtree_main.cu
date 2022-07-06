@@ -12,77 +12,6 @@
 #include <thrust/fill.h>
 #include "kdtree.cuh"
 
-struct float3Array
-{
-    float* x;
-    float* y;
-    float* z;
-    int* index;
-};
-
-struct node
-{
-    float3 point;
-    int index;
-    node *parent;
-    node *leftChild;
-    node *rightChild;
-};
-
-struct compare_float3_x
-{
-    __host__ __device__
-    bool operator()(float3 a, float3 b)
-    {
-        return a.x < b.x;
-    }
-};
-//struct compare_float3_y
-//{
-//    __host__ __device__
-//    bool operator()(float3 a, float3 b)
-//    {
-//        return a.y < b.y;
-//    }
-//};
-//struct compare_float3_z
-//{
-//    __host__ __device__
-//    bool operator()(float3 a, float3 b)
-//    {
-//        return a.z < b.z;
-//    }
-//};
-
-//specialMaximum retuns the maximum value between two integers
-//unless if they are equal, then it will return the integer++
-//this will be used to update our SubArray
-//template<typename T>
-//struct specialMaximum : public thrust::binary_function<T,T,T>
-//{
-//    __host__ __device__
-//    const T operator()(const T &lhs, const T &rhs) const
-//    {
-//        if(lhs<rhs)
-//        {
-//            return (((int)rhs)+1);
-//        }
-//        if(lhs==rhs)
-//        {
-//            if(lhs==0)
-//            {
-//                return 0;
-//            }
-//            return (((int)rhs)+1);
-//        }
-//        return lhs < rhs ? rhs : lhs;
-//    }
-//};
-
-
-//int constructKD(thrust::device_vector<float3>& dPoints, int begin, int end,	compare_float3_x& comp_x, compare_float3_y& comp_y ,compare_float3_z& comp_z, int numLevels);
-//int constructKD(thrust::device_vector<float3>& dPoints, int whichDim, int begin, int end,	compare_float3_x& comp_x, compare_float3_y& comp_y ,compare_float3_z& comp_z, int numLevels);
-
 int main(int argc, char **argv) {
     if (argc != 4) {
         printf("please run this program by the following parameter: kdtree_high sample_number filePath\n");
@@ -130,26 +59,35 @@ int main(int argc, char **argv) {
 
     thrust::device_vector<float3> dPoints=point_data;
     float3 * ptr = thrust::raw_pointer_cast(&dPoints[0]);
-    int * bucketIndex;
-    int * bucketLength;
-    cudaMalloc((void **) &bucketIndex, bucketSize*sizeof(int));
-    cudaMalloc((void **) &bucketLength, bucketSize*sizeof(int));
-    init(bucketLength, bucketIndex, point_data_size);
-    buildKDTree(bucketIndex, bucketLength, ptr, kd_high);
+
+    float3 * up;
+    float3 * down;
+    float3 * result;
+
+    thrust::device_vector<float4> bucketTableVector(bucketSize);
+    thrust::device_vector<int> bucketIndexVector(bucketSize);
+    thrust::device_vector<int> bucketLengthVector(bucketSize);
+
+    thrust::fill(bucketTableVector.begin(), bucketTableVector.end(), float4{0,0,0,1e20});
+    thrust::fill(bucketIndexVector.begin(), bucketIndexVector.end(), 0);
+    thrust::fill(bucketLengthVector.begin(), bucketLengthVector.end(), point_data_size);
+
+    int * bucketIndex = thrust::raw_pointer_cast(&bucketIndexVector[0]);
+    int * bucketLength = thrust::raw_pointer_cast(&bucketLengthVector[0]);
+    float4 * bucketTable = thrust::raw_pointer_cast(&bucketTableVector[0]);
+
+    cudaMalloc((void **)&up, bucketSize*sizeof(float3));
+    cudaMalloc((void **)&down, bucketSize*sizeof(float3));
+    cudaMalloc((void **)&result, sample_number*sizeof(float3));
 
 
+    buildKDTree(bucketIndex, bucketLength, ptr, kd_high, up, down);
 
-//    int whichDim = constructKD(dPoints, 0, point_data_size, comp_x, comp_y, comp_z, kd_high);
-//    printf("%d\n", whichDim);
     end_build_t = clock();
     //fps
-
+    sample(bucketIndex, bucketLength, ptr, bucketSize, up, down, bucketTable, sample_number, result);
     end_t = clock();
     start_t = start_build_t;
-    compare_float3_x comp_x;
-
-    std::sort(point_data.begin(), point_data.end(),comp_x);
-    printf("mid x: %f\n", point_data[point_data_size/2].x);
 
     thrust::copy(dPoints.begin(), dPoints.end(), point_data.begin());
 
@@ -175,6 +113,11 @@ int main(int argc, char **argv) {
     std::cout << "    Param  :" << filename << std::endl;
     std::time_t time_result = std::time(NULL);
     std::cout << "  Timestamp:" << std::asctime(std::localtime(&time_result)) << std::endl;
+
+    cudaFree(up);
+    cudaFree(down);
+    cudaFree(result);
+
     return 0;
 }
 

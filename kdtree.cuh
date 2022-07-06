@@ -6,7 +6,7 @@
 #define FPS_GPU_KDTREE_CUH
 #include "iostream"
 
-#define numOfCudaCores  512
+#define numOfCudaCores  1024 
 void init(int * bucketLength, int * bucketIndex, int point_data_size);
 __global__ void init_bucketLength(int * bucketLength, int * bucketIndex, int point_data_size);
 void    buildKDTree(int * bucketIndex, int * bucketLength, float3 * ptr, int kd_high);

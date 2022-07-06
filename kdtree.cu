@@ -89,37 +89,44 @@ __global__ void devide(float3* dPoints, int * bucketIndex, int * bucketLength, i
         //merge sort
         int divideDim = partitionDim[blockIdx.x];
         float divideValue = partitionValue[blockIdx.x];
-        int left, right;
+ 
         int mid = 0;
         for(int stride = 1; stride < partitionLen; stride *= 2){
             for(int threadStart = threadIdx.x * 2 * stride; threadStart < partitionLen; threadStart += threadStride * stride * 2){
-                left = threadStart;
+                int left = threadStart;
                 int endLeft = (left + stride)  < partitionLen ?  (left + stride) : partitionLen; //边界条件: left < endLeft
 
-                right = (left + 2 * stride) < partitionLen ? (left + 2 * stride - 1) : (partitionLen -1);
+                int right = (left + 2 * stride) < partitionLen ? (left + 2 * stride - 1) : (partitionLen -1);
                 int endRight = (left + stride)  < partitionLen ? (left + stride - 1) : (partitionLen - 1); //边界条件: right > endRight
 
                 if(divideDim == 0) {
                     while (left < endLeft) {
                         if (dataset[left].x <= divideValue) left++;
+                        else break;
+                        
                     }
                     while (right > endRight) {
                         if (dataset[right].x >= divideValue) right--;
+                        else break;
                     }
                 } else{
                     if(divideDim == 1){
                         while (left < endLeft) {
                             if (dataset[left].y <= divideValue) left++;
+                            else break;
                         }
                         while (right > endRight) {
                             if (dataset[right].y >= divideValue) right--;
+                            else break;
                         }
                     } else{
                         while (left < endLeft) {
                             if (dataset[left].z <= divideValue) left++;
+                            else break;
                         }
                         while (right > endRight) {
                             if (dataset[right].z >= divideValue) right--;
+                            else break;
                         }
                     }
                 }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(FPS_GPU CUDA)
 
-set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD 14)
 
 set(default_build_type "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

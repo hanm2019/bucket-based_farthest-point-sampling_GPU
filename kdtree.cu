@@ -180,7 +180,7 @@ void    buildKDTree(int * bucketIndex, int * bucketLength, float3 * ptr, int kd_
     nBlocks = 1 << kd_high;
     nThreads = numOfCudaCores/nBlocks;
     int ThreadSize = nBlocks * nThreads;
-    generateBoundbox<<<nBlocks, nThreads, ThreadSize * 2 * sizeof(float3) >>>(bucketIndex, bucketLength, ptr, nBlocks, up, down);
+    generateBoundbox<<<nBlocks, nThreads, ThreadSize * 2 * sizeof(float3) >>>(bucketIndex, bucketLength, ptr, nBlocks,ThreadSize, up, down);
 
 }
 

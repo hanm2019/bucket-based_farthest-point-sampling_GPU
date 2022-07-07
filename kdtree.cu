@@ -200,11 +200,11 @@ __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 *
     float3* shareUp = buffer;
     float3* shareDown = (float3*)&up[bufferLength];
 
-    int partitionStride = gridDim.x;
-    int threadStride = blockDim.x;
+    const int partitionStride = gridDim.x;
+    const int threadStride = blockDim.x;
 
     for(int partitionId = blockIdx.x; partitionId < numPartition; partitionId += partitionStride) {
-        int shareMemoryIdx = threadIdx.x + blockIdx.x * blockDim.x;
+        const int shareMemoryIdx = threadIdx.x + blockIdx.x * blockDim.x;
 
         float3 *threadUp = (float3 *) &shareUp[shareMemoryIdx];
         float3 *threadDown = (float3 *) &shareDown[shareMemoryIdx];
@@ -212,8 +212,8 @@ __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 *
         float3 dimUp = {-1e10, -1e10, -1e10};
         float3 dimDown = {1e10, 1e10, 1e10};
 
-        int partitionOffset = bucketIndex[partitionId];
-        int partitionLen = bucketLength[partitionId];
+        const int partitionOffset = bucketIndex[partitionId];
+        const int partitionLen = bucketLength[partitionId];
 
         float3 *dataset = dPoints + partitionOffset;
         for (int i = threadIdx.x; i < partitionLen; i += threadStride) {

@@ -64,17 +64,16 @@ int main(int argc, char **argv) {
     float3 * down;
     float3 * result;
 
-    thrust::device_vector<float4> bucketTableVector(bucketSize);
     thrust::device_vector<int> bucketIndexVector(bucketSize);
     thrust::device_vector<int> bucketLengthVector(bucketSize);
 
-    thrust::fill(bucketTableVector.begin(), bucketTableVector.end(), float4{0,0,0,1e20});
+
     thrust::fill(bucketIndexVector.begin(), bucketIndexVector.end(), 0);
     thrust::fill(bucketLengthVector.begin(), bucketLengthVector.end(), point_data_size);
 
     int * bucketIndex = thrust::raw_pointer_cast(&bucketIndexVector[0]);
     int * bucketLength = thrust::raw_pointer_cast(&bucketLengthVector[0]);
-    float4 * bucketTable = thrust::raw_pointer_cast(&bucketTableVector[0]);
+
 
     cudaMalloc((void **)&up, bucketSize*sizeof(float3));
     cudaMalloc((void **)&down, bucketSize*sizeof(float3));
@@ -85,11 +84,14 @@ int main(int argc, char **argv) {
 
     end_build_t = clock();
     //fps
-    sample(bucketIndex, bucketLength, ptr, bucketSize, up, down, bucketTable, sample_number, result);
+    sample(bucketIndex, bucketLength, ptr, point_data_size, bucketSize, up, down, sample_number, result);
+
     end_t = clock();
     start_t = start_build_t;
 
-    thrust::copy(dPoints.begin(), dPoints.end(), point_data.begin());
+    float3 result_cpu[sample_number];
+
+    cudaMemcpy((void *)result_cpu,(void *)result, sample_number*sizeof(float3), cudaMemcpyDeviceToHost);
 
     //read point
     std::ofstream fout("kdtree.txt");
@@ -97,7 +99,7 @@ int main(int argc, char **argv) {
         std::cout << "file failed to open" << std::endl;
         return 0;
     }
-    for(const auto& point : point_data){
+    for(const auto& point : result_cpu){
         fout << point.x << " " << point.y << " " << point.z << std::endl;
     }
 
@@ -120,104 +122,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
-
-////whichDim simply means which dimension we are sorting by, 0 = x, 1 = y, 2 = z
-//int constructKD(thrust::device_vector<float3>& dPoints, int begin, int end,	compare_float3_x& comp_x, compare_float3_y& comp_y ,compare_float3_z& comp_z, int numLevels) {
-//    int whichDim = 0;
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> maxx = thrust::max_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_x);
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> maxy = thrust::max_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_y);
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> maxz = thrust::max_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_z);
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> minx = thrust::min_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_x);
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> miny = thrust::min_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_y);
-//    thrust::detail::normal_iterator<thrust::device_ptr<float3>> minz = thrust::min_element(dPoints.begin() + begin,
-//                                                                                           dPoints.begin() + end,
-//                                                                                           comp_z);
-//
-//    float rangeX = static_cast<float3>(*maxx).x - static_cast<float3>(*minx).x;
-//    float rangeY = static_cast<float3>(*maxy).y - static_cast<float3>(*miny).y;
-//    float rangeZ = static_cast<float3>(*maxz).z - static_cast<float3>(*minz).z;
-//
-//    if (rangeX > rangeY && rangeX > rangeZ) {
-//        whichDim = 0;
-//    } else {
-//        if (rangeY > rangeX && rangeY > rangeZ) {
-//            whichDim = 1;
-//        } else {
-//            if (rangeZ > rangeX && rangeZ > rangeY) {
-//                whichDim = 2;
-//            } else {
-//                whichDim = 0;
-//            }
-//        }
-//    }
-//    switch(whichDim)
-//    {
-//        case 0:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_x);
-//            break;
-//        case 1:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_y);
-//            break;
-//        case 2:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_z);
-//            break;
-//        default:
-//            printf("You shouldn't be here; i.e. wrong case number");
-//            break;
-//    }
-//
-//    numLevels--;
-//    int numOfPoints = end-begin;
-//    int lowerBound = ((int)numOfPoints/2)+begin;
-//    int upperBound = ((int)numOfPoints/2)+1+begin;
-//    int toReturn=0;
-//    if(numLevels>0)
-//    {
-//        toReturn=constructKD(dPoints, begin, lowerBound, comp_x, comp_y, comp_z, numLevels);
-//        toReturn=constructKD(dPoints, upperBound, end, comp_x, comp_y, comp_z, numLevels);
-//    }
-//    return toReturn;
-//
-//}
-//int constructKD(thrust::device_vector<float3>& dPoints, int whichDim, int begin, int end,	compare_float3_x& comp_x, compare_float3_y& comp_y ,compare_float3_z& comp_z, int numLevels) {
-//
-//    switch(whichDim)
-//    {
-//        case 0:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_x);
-//            break;
-//        case 1:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_y);
-//            break;
-//        case 2:
-//            thrust::sort(dPoints.begin()+begin, dPoints.begin()+end, comp_z);
-//            break;
-//        default:
-//            printf("You shouldn't be here; i.e. wrong case number");
-//            break;
-//    }
-//
-//    numLevels--;
-//    int numOfPoints = end-begin;
-//    int lowerBound = ((int)numOfPoints/2)+begin;
-//    int upperBound = ((int)numOfPoints/2)+1+begin;
-//    int toReturn=0;
-//    if(numLevels>0)
-//    {
-//        toReturn=constructKD(dPoints, (whichDim + 1) % 3 , begin, lowerBound, comp_x, comp_y, comp_z, numLevels);
-//        toReturn=constructKD(dPoints, (whichDim + 1) % 3 ,upperBound, end, comp_x, comp_y, comp_z, numLevels);
-//    }
-//    return toReturn;
-//}

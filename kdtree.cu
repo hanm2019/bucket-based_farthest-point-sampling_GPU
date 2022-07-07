@@ -39,17 +39,19 @@ __global__ void devide(float3* dPoints, int * bucketIndex, int * bucketLength, i
 
         float3* dataset = dPoints + partitionOffset;
         for(int i = threadIdx.x; i < partitionLen; i += threadStride){
-            dimUp.x = max(dimUp.x, dataset[i].x);
-            dimUp.y = max(dimUp.y, dataset[i].y);
-            dimUp.z = max(dimUp.z, dataset[i].z);
+            float3 data = dataset[i];
 
-            dimDown.x = min(dimDown.x, dataset[i].x);
-            dimDown.y = min(dimDown.y, dataset[i].y);
-            dimDown.z = min(dimDown.z, dataset[i].z);
+            dimUp.x = max(dimUp.x, data.x);
+            dimUp.y = max(dimUp.y, data.y);
+            dimUp.z = max(dimUp.z, data.z);
 
-            dimSum.x  += dataset[i].x;
-            dimSum.y  += dataset[i].y;
-            dimSum.z  += dataset[i].z;
+            dimDown.x = min(dimDown.x, data.x);
+            dimDown.y = min(dimDown.y, data.y);
+            dimDown.z = min(dimDown.z, data.z);
+
+            dimSum.x  += data.x;
+            dimSum.y  += data.y;
+            dimSum.z  += data.z;
         }
         threadUp[0] = dimUp;
         threadDown[0] = dimDown;
@@ -184,10 +186,12 @@ void    buildKDTree(int * bucketIndex, int * bucketLength, float3 * ptr, int kd_
 
 }
 
-void
-sample(int *bucketIndex, int *bucketLength, float3 *ptr, int bucketSize, float3 *up, float3 *down, float4 *bucketTable,
-       int sample_number, float3 *result) {
+void sample(int * bucketIndex, int * bucketLength, float3 * ptr, int pointSize,  int bucketSize, float3 * up, float3 * down, int sample_number, float3 * result){
 
+    thrust::device_vector<float> tempVector(pointSize);
+    thrust::fill(tempVector.begin(), tempVector.end(), 1e20);
+    float * temp = thrust::raw_pointer_cast(&tempVector[0]);
+    sample_kernel<numOfCudaCores><<<1,numOfCudaCores, bucketSize * (sizeof(float4) + sizeof(int)) + numOfCudaCores * (sizeof(float) + sizeof(int)) + sizeof(int) >>>(bucketIndex, bucketLength, ptr, temp, bucketSize, up, down, sample_number,result);
 }
 
 __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 * dPoints, int numPartition, int bufferLength, float3 * up, float3 * down){
@@ -213,13 +217,14 @@ __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 *
 
         float3 *dataset = dPoints + partitionOffset;
         for (int i = threadIdx.x; i < partitionLen; i += threadStride) {
-            dimUp.x = max(dimUp.x, dataset[i].x);
-            dimUp.y = max(dimUp.y, dataset[i].y);
-            dimUp.z = max(dimUp.z, dataset[i].z);
+            float3 data = dataset[i];
+            dimUp.x = max(dimUp.x, data.x);
+            dimUp.y = max(dimUp.y, data.y);
+            dimUp.z = max(dimUp.z, data.z);
 
-            dimDown.x = min(dimDown.x, dataset[i].x);
-            dimDown.y = min(dimDown.y, dataset[i].y);
-            dimDown.z = min(dimDown.z, dataset[i].z);
+            dimDown.x = min(dimDown.x, data.x);
+            dimDown.y = min(dimDown.y, data.y);
+            dimDown.z = min(dimDown.z, data.z);
         }
         threadUp[0] = dimUp;
         threadDown[0] = dimDown;

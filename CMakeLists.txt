@@ -16,6 +16,9 @@ endif()
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
+set(CMAKE_CUDA_FLAGS_DEBUG "-g -G")
+set(CMAKE_CUDA_FLAGS_RELEASE  "-O3")
+
 add_executable(FPS_KDTree_GPU  kdtree_main.cu host_common.h device_common.cu device_common.cuh kdtree.cu kdtree.cuh)
 
 set_target_properties(FPS_KDTree_GPU PROPERTIES

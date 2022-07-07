@@ -25,6 +25,19 @@ __device__ void __update(float *__restrict__ dists, int *__restrict__ dists_i, i
 }
 
 __device__ void merge(float *__restrict__ dists, int *__restrict__ dists_i,int tid, int block_size){
+    if (block_size >= 4096) {
+        if (tid < 2048) {
+            __update(dists, dists_i, tid, tid + 2048);
+        }
+        __syncthreads();
+    }
+    if (block_size >= 2048) {
+        if (tid < 1024) {
+            __update(dists, dists_i, tid, tid + 1024);
+        }
+        __syncthreads();
+    }
+
     if (block_size >= 1024) {
         if (tid < 512) {
             __update(dists, dists_i, tid, tid + 512);

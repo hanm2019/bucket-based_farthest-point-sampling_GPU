@@ -5,6 +5,7 @@
 #ifndef FPS_GPU_HOST_COMMON_H
 #define FPS_GPU_HOST_COMMON_H
 
+
 struct Point{
     float pos[3];
     Point(float x,float y, float z){
@@ -13,5 +14,6 @@ struct Point{
         this->pos[2] = z;
     }
 };
+
 
 #endif //FPS_GPU_HOST_COMMON_H

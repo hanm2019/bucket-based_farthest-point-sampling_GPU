@@ -11,7 +11,8 @@ __global__ void farthest_point_sampling_kernel(int N, int npoint, const float *d
     __shared__ float dists[block_size];
     __shared__ int dists_i[block_size];
 
-    int tid = threadIdx.x + blockDim.x * blockIdx.x;
+    int tid = threadIdx.x;
+
     const int stride = block_size;
     for(int j = tid; j < N; j += stride){
         temp[j] = 1e10;
@@ -63,8 +64,9 @@ __global__ void farthest_point_sampling_kernel(int N, int npoint, const float *d
 void farthest_point_sampling(int point_data_size, int sample_number, const float *coordinates, float * result) {
     float * temp;
     cudaMalloc((void **) &temp, (point_data_size)*sizeof(float));
-
-    farthest_point_sampling_kernel<4096><<<32, 128>>>(point_data_size,sample_number,coordinates,temp,result);
+    dim3 grid(1);
+    dim3 block(1024);
+    farthest_point_sampling_kernel<1024><<<grid, block>>>(point_data_size,sample_number,coordinates,temp,result);
     cudaFree(temp);
 }
 
@@ -137,6 +139,19 @@ int main(int argc, char **argv) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
         exit(-1);
     }
+
+    //read point
+    std::ofstream fout("baseline.txt");
+    if (!fout.is_open()) {
+        std::cout << "file failed to open" << std::endl;
+        return 0;
+    }
+    for(int i = 0 ;i < sample_number ;i ++){
+        fout << result_cpu[i*3] << " " << result_cpu[i*3+1] << " " << result_cpu[i*3+2] << std::endl;
+    }
+
+    fout.close();
+
 
     start_t = start_build_t;
     std::cout << "Report:" << std::endl;

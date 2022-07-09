@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
     float3 * down;
     float3 * result;
 
+
     thrust::device_vector<int> bucketIndexVector(bucketSize);
     thrust::device_vector<int> bucketLengthVector(bucketSize);
 
@@ -80,7 +81,16 @@ int main(int argc, char **argv) {
     cudaMalloc((void **)&result, sample_number*sizeof(float3));
 
 
-    buildKDTree(bucketIndex, bucketLength, ptr, kd_high, up, down);
+
+    buildKDTree(bucketIndex, bucketLength, ptr, kd_high, up, down, point_data_size);
+
+#ifdef  DEBUG_GG
+    thrust::host_vector<int>cpu_bucketLength(bucketSize);
+    thrust::copy(bucketLengthVector.begin(), bucketLengthVector.end(), cpu_bucketLength.begin());
+    for(const auto & leng: cpu_bucketLength){
+        printf("len: %d\n", leng);
+    }
+#endif
 
     end_build_t = clock();
     //fps

@@ -277,10 +277,9 @@ void sample(int * bucketIndex, int * bucketLength, float3 * ptr, int pointSize, 
 #endif
     cudaMemcpy(result, ptr, sizeof(float3),cudaMemcpyDeviceToDevice); //first point
 
-    dim3 checkBucketDim(bucketSize);
     dim3 bucketDim(bucketSize);
     for(int i = 1; i < sample_number; i++){
-        checkBucket<<<1,checkBucketDim>>>(bucketTable, result, i, up, down, needToDeal);
+        checkBucket<<<1,bucketDim>>>(bucketTable, result, i, up, down, needToDeal);
 
         sample_kernel<numOfCudaCores><<<bucketDim,numOfCudaCores >>>(bucketIndex, bucketLength, ptr, temp , result, i ,needToDeal, bucketTable);
 
@@ -369,17 +368,17 @@ void reduce(int bucketSize,  float4* bucketTable, float3 * result, int offset){
     assert(bucketSize <=1024);
     dim3 BucketDim(bucketSize);
     switch (bucketSize) {
-        case 1:reduce_kernel<1><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 2:reduce_kernel<2><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 4:reduce_kernel<4><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 8:reduce_kernel<8><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 16:reduce_kernel<16><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 32:reduce_kernel<32><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 64:reduce_kernel<64><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 128:reduce_kernel<128><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 256:reduce_kernel<256><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 512:reduce_kernel<512><<<1, BucketDim>>>(bucketTable, result, offset);
-        case 1024:reduce_kernel<1024><<<1, BucketDim>>>(bucketTable, result, offset);
+        case 1:reduce_kernel<1><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 2:reduce_kernel<2><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 4:reduce_kernel<4><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 8:reduce_kernel<8><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 16:reduce_kernel<16><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 32:reduce_kernel<32><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 64:reduce_kernel<64><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 128:reduce_kernel<128><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 256:reduce_kernel<256><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 512:reduce_kernel<512><<<1, BucketDim>>>(bucketTable, result, offset);break;
+        case 1024:reduce_kernel<1024><<<1, BucketDim>>>(bucketTable, result, offset);break;
     }
 }
 

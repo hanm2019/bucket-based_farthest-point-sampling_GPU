@@ -10,6 +10,33 @@
 #include "device_common.cuh"
 
 #define numOfCudaCores  1024
+#define CUDA_ERROR_CHECK
+#define CudaCheckError()    __cudaCheckError( __FILE__, __LINE__ )
+
+inline void __cudaCheckError( const char *file, const int line )
+{
+#ifdef CUDA_ERROR_CHECK
+    cudaError err = cudaGetLastError();
+    if ( cudaSuccess != err )
+    {
+        fprintf( stderr, "cudaCheckError() failed at %s:%i : %s\n",
+                 file, line, cudaGetErrorString( err ) );
+        exit( -1 );
+    }
+
+    // More careful checking. However, this will affect performance.
+    // Comment away if needed.
+    err = cudaDeviceSynchronize();
+    if( cudaSuccess != err )
+    {
+        fprintf( stderr, "cudaCheckError() with sync failed at %s:%i : %s\n",
+                 file, line, cudaGetErrorString( err ) );
+        exit( -1 );
+    }
+#endif
+
+    return;
+}
 
 void    buildKDTree(int * bucketIndex, int * bucketLength, float3 * ptr, int kd_high, float3 * up, float3 * down, int point_data_size);
 
@@ -20,6 +47,8 @@ __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 *
 __global__ void checkBucket(float4* bucketTable,float3 *result,int i,float3 *up,float3 *down,bool *needToDeal);
 
 void reduce(int bucketSize, float4* bucketTable, float3 * result, int offset);
+
+__device__ float pow2(float a);
 
 void sample(int * bucketIndex, int * bucketLength, float3 * ptr,int pointSize, int bucketSize, float3 * up, float3 * down, int sample_number, float3 * result);
 
@@ -58,7 +87,7 @@ void sample_kernel(int *bucketIndex, int *bucketLength, float3 *ptr,float* temp,
         int besti = 0;
         for (int k = tid; k < partitionLen; k += block_size) {
             const float3 point = dataset[k];
-            const float d = pow((point.x - origin_x), 2) + pow((point.y - origin_y), 2) + pow((point.z - origin_z), 2);
+            const float d = pow2((point.x - origin_x)) + pow2((point.y - origin_y)) + pow2((point.z - origin_z));
             const float d2 = min(d, distTemp[k]);
             distTemp[k] = d2;
             besti = d2 > best ? k : besti;
@@ -94,6 +123,7 @@ void reduce_kernel(float4* bucketTable, float3 * result, int offset){
         const float4 maxPoint = bucketTable[dists_i[0]];
         result[offset] = float3({maxPoint.x, maxPoint.y, maxPoint.z});
     }
+    __syncthreads();
 }
 
 

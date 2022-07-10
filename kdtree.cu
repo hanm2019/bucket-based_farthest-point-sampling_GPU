@@ -280,12 +280,17 @@ void sample(int * bucketIndex, int * bucketLength, float3 * ptr, int pointSize, 
     dim3 bucketDim(bucketSize);
     for(int i = 1; i < sample_number; i++){
         checkBucket<<<1,bucketDim>>>(bucketTable, result, i, up, down, needToDeal);
-
+        CudaCheckError();
         sample_kernel<numOfCudaCores><<<bucketDim,numOfCudaCores >>>(bucketIndex, bucketLength, ptr, temp , result, i ,needToDeal, bucketTable);
-
+        CudaCheckError();
         reduce(bucketSize, bucketTable,result,i);
+        CudaCheckError();
     }
 
+}
+
+__device__ float pow2(float a){
+    return a*a;
 }
 
 __global__ void checkBucket(float4* bucketTable ,float3 *result,int i,float3 *up,float3 *down,bool *needToDeal) {
@@ -298,13 +303,13 @@ __global__ void checkBucket(float4* bucketTable ,float3 *result,int i,float3 *up
     const float3 bucketDown = down[tid];
 
     const float last_dist = bucketMaxPoint.w;
-    const float cur_dist = pow((origin_point.x - bucketMaxPoint.x) ,2) +
-                               pow((origin_point.y - bucketMaxPoint.y),2)  +
-                               pow((origin_point.z - bucketMaxPoint.z),2);
+    const float cur_dist = pow2((origin_point.x - bucketMaxPoint.x)) +
+                               pow2((origin_point.y - bucketMaxPoint.y))  +
+                               pow2((origin_point.z - bucketMaxPoint.z));
 
-    const float bound_dist = pow(max(origin_point.x, bucketUp.x) - bucketUp.x,2) + pow(bucketDown.x - min(origin_point.x, bucketDown.x),2) +
-                                 pow(max(origin_point.y, bucketUp.y) - bucketUp.y,2) + pow(bucketDown.y - min(origin_point.y, bucketDown.y),2) +
-                                 pow(max(origin_point.z, bucketUp.z) - bucketUp.z,2) + pow(bucketDown.z - min(origin_point.z, bucketDown.z),2) ;
+    const float bound_dist = pow2(max(origin_point.x, bucketUp.x) - bucketUp.x) + pow2(bucketDown.x - min(origin_point.x, bucketDown.x)) +
+                                 pow2(max(origin_point.y, bucketUp.y) - bucketUp.y) + pow2(bucketDown.y - min(origin_point.y, bucketDown.y)) +
+                                 pow2(max(origin_point.z, bucketUp.z) - bucketUp.z) + pow2(bucketDown.z - min(origin_point.z, bucketDown.z)) ;
     needToDeal[tid] = (cur_dist <= last_dist || bound_dist < last_dist);
 }
 
@@ -365,7 +370,7 @@ __global__ void generateBoundbox(int * bucketIndex, int * bucketLength, float3 *
 }
 
 void reduce(int bucketSize,  float4* bucketTable, float3 * result, int offset){
-    assert(bucketSize <=1024);
+    assert(bucketSize <=numOfCudaCores);
     dim3 BucketDim(bucketSize);
     switch (bucketSize) {
         case 1:reduce_kernel<1><<<1, BucketDim>>>(bucketTable, result, offset);break;

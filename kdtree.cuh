@@ -10,7 +10,7 @@
 #include "device_common.cuh"
 
 #define numOfCudaCores  1024
-#define CUDA_ERROR_CHECK
+#define MergeLen 2048
 #define CudaCheckError()    __cudaCheckError( __FILE__, __LINE__ )
 
 inline void __cudaCheckError( const char *file, const int line )
@@ -115,7 +115,7 @@ void reduce_kernel(float4* bucketTable, float3 * result, int offset){
     const int tid = threadIdx.x;
 
     dists[tid] = bucketTable[tid].w;
-    dists[tid] = tid;
+    dists_i[tid] = tid;
 
     merge(dists, dists_i, tid, block_size);
 

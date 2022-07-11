@@ -106,7 +106,7 @@ __global__ void devide(float3* dPoints, float3 * dtemp, int * bucketIndex, int *
         //merge sort
         int divideDim = (*partitionDim);
         float divideValue = (*partitionValue);
-        const int partMergeLen = 2048;
+        const int partMergeLen = MergeLen;
 
 
         for(int dataPtr = 0; dataPtr < partitionLen; dataPtr += partMergeLen){
@@ -239,7 +239,7 @@ void buildKDTree(int * bucketIndex, int * bucketLength, float3 * ptr, int kd_hig
         nBlocks =  ((int) pow(2.0f,currentLevel+0.0f));
         nThreads = currentLevel > 2 ? std::max(32, 4096/nBlocks) : 1024;
 
-        const int bytes = std::max( nThreads*3*sizeof(float3) + sizeof(int) + sizeof(float) , 2048 * sizeof(float3)) + 3 * sizeof(int);
+        const int bytes = std::max( nThreads*3*sizeof(float3) + sizeof(int) + sizeof(float) , MergeLen * sizeof(float3)) + 3 * sizeof(int);
         const int offset = (bytes/sizeof(float)) - 3;
         devide<<<nBlocks, nThreads,bytes>>>
             (ptr,dtemp, bucketIndex, bucketLength, nBlocks, nThreads, offset);

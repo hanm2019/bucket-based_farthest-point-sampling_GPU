@@ -19,6 +19,12 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 set(CMAKE_CUDA_FLAGS_DEBUG "-g -G")
 set(CMAKE_CUDA_FLAGS_RELEASE  "-O3")
 
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    message("add define: DCUDA_ERROR_CHECK")
+    add_definitions(-DCUDA_ERROR_CHECK)
+endif()
+
 add_executable(FPS_KDTree_GPU  kdtree_main.cu host_common.h device_common.cu device_common.cuh kdtree.cu kdtree.cuh)
 
 set_target_properties(FPS_KDTree_GPU PROPERTIES

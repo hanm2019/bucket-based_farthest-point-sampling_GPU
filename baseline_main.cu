@@ -12,6 +12,7 @@ __global__ void farthest_point_sampling_kernel(int N, int npoint, const float *d
     __shared__ int dists_i[block_size];
 
     int tid = threadIdx.x;
+
     const int stride = block_size;
     for(int j = tid; j < N; j += stride){
         temp[j] = 1e10;
@@ -60,11 +61,12 @@ __global__ void farthest_point_sampling_kernel(int N, int npoint, const float *d
 
 }
 
-void farthest_point_sampling(unsigned int block_size, int point_data_size, int sample_number, const float *coordinates, float * result) {
+void farthest_point_sampling(int point_data_size, int sample_number, const float *coordinates, float * result) {
     float * temp;
     cudaMalloc((void **) &temp, (point_data_size)*sizeof(float));
-
-    farthest_point_sampling_kernel<1024><<<1, block_size>>>(point_data_size,sample_number,coordinates,temp,result);
+    dim3 grid(1);
+    dim3 block(1024);
+    farthest_point_sampling_kernel<1024><<<grid, block>>>(point_data_size,sample_number,coordinates,temp,result);
     cudaFree(temp);
 }
 
@@ -125,7 +127,7 @@ int main(int argc, char **argv) {
     cudaMalloc((void **) &d_coord, (point_data_size)*sizeof(float)*3);
     cudaMalloc((void **) &result, (sample_number)*sizeof(float)*3);
     cudaMemcpy(d_coord,coordinates,point_data_size *sizeof(float )*3 ,cudaMemcpyHostToDevice);
-    farthest_point_sampling(1024,point_data_size,sample_number,d_coord,result);
+    farthest_point_sampling(point_data_size,sample_number,d_coord,result);
     cudaMemcpy(result_cpu,result, sample_number * 3 * sizeof(float), cudaMemcpyDeviceToHost);
 
     end_t = clock();
@@ -137,6 +139,19 @@ int main(int argc, char **argv) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
         exit(-1);
     }
+
+    //read point
+    std::ofstream fout("baseline.txt");
+    if (!fout.is_open()) {
+        std::cout << "file failed to open" << std::endl;
+        return 0;
+    }
+    for(int i = 0 ;i < sample_number ;i ++){
+        fout << result_cpu[i*3] << " " << result_cpu[i*3+1] << " " << result_cpu[i*3+2] << std::endl;
+    }
+
+    fout.close();
+
 
     start_t = start_build_t;
     std::cout << "Report:" << std::endl;

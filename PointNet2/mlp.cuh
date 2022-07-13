@@ -5,6 +5,7 @@
 
 using algo_perf_t = cudnnConvolutionFwdAlgoPerf_t;
 
+#ifdef CUDA_ERROR_CHECK
 #define checkCUDNN(expression)                                  \
   {                                                             \
     cudnnStatus_t status = (expression);                        \
@@ -14,6 +15,13 @@ using algo_perf_t = cudnnConvolutionFwdAlgoPerf_t;
 	    std::exit(EXIT_FAILURE);                                \
     }                                                           \
  }
+#else
+#define checkCUDNN(expression)                                  \
+  {                                                             \
+    expression;                                                 \
+    }                                                           \
+  }
+#endif
 
 bool get_valid_best_algo(std::vector<algo_perf_t>& algo_arr) {
     auto it = std::remove_if(algo_arr.begin(), algo_arr.end(), [](algo_perf_t algo_perf){

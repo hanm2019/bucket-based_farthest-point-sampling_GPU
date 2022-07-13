@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     cudaEventCreate(&group_end);
     int k = 20; //每个点的最多邻居数量
     int channelNum = 3;
-
+    float radius = 100; // 0.5 x 200
     float (*coordinates) = new float[point_data_size * 3];
     float *d_coord;
     float *result;
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
     farthest_point_sampling(point_data_size,sample_number,d_coord,result);
     cudaEventRecord(fps_end);
     //query
-    ball_query(point_data_size, sample_number, 1, k, result, d_coord, idx);
+    ball_query(point_data_size, sample_number, radius, k, result, d_coord, idx);
     //group map
     group_points(channelNum, point_data_size, sample_number, k, d_coord, idx, group_out);
     cudaEventRecord(group_end);

@@ -26,10 +26,6 @@ int main(int argc, char **argv) {
     int sample_number = atoi(argv[2]);
     std::string filename =  argv[3];
 
-    clock_t start_t, end_t;
-    clock_t start_build_t, end_build_t;
-
-
     //read point
     std::ifstream fin(filename);
     if (!fin.is_open()) {

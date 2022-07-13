@@ -28,12 +28,12 @@ jobs:
     - name: cuDNN
       run: |
         wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin 
-        mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/7fa2af80.pub
-        add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/ /"
-        apt-get update
-        apt-get install libcudnn8=8.4.1.50-1+11.6
-        apt-get install libcudnn8-dev=8.4.1.50-1+11.6
+        sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/7fa2af80.pub
+        sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/ /"
+        sudo apt-get update
+        sudo apt-get install libcudnn8=8.4.1.50-1+11.6
+        sudo apt-get install libcudnn8-dev=8.4.1.50-1+11.6
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type

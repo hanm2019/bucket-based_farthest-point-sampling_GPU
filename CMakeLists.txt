@@ -39,7 +39,7 @@ add_executable(FPS_Baseline_GPU baseline_main.cu host_common.h device_common.cu 
 set_target_properties(FPS_Baseline_GPU PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(PointNet_GPU  pointnet2.cu host_common.h device_common.cu device_common.cuh baseline_sampling.cu baseline_sampling.cuh ball_query_gpu.cu ball_query_gpu.cuh group_gpu.cu group_gpu.cuh mlp.cuh)
+add_executable(PointNet_GPU PointNet2/pointnet2.cu host_common.h device_common.cu device_common.cuh baseline_sampling.cu baseline_sampling.cuh PointNet2/ball_query_gpu.cu PointNet2/ball_query_gpu.cuh PointNet2/group_gpu.cu PointNet2/group_gpu.cuh PointNet2/mlp.cuh)
 
 set_target_properties(PointNet_GPU PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)

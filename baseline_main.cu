@@ -18,9 +18,6 @@ int main(int argc, char **argv) {
     int sample_number = atoi(argv[1]);
     std::string filename =  argv[2];
 
-    clock_t start_t, end_t;
-    clock_t start_build_t;
-
     //read point
     std::ifstream fin(filename);
     if (!fin.is_open()) {
@@ -45,6 +42,9 @@ int main(int argc, char **argv) {
     float * d_coord;
     float * result;
 
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
     for(int i = 0 ;i < point_data_size ; i++){
         coordinates[i*3] = point_data[i].pos[0];
@@ -56,16 +56,16 @@ int main(int argc, char **argv) {
     cudaDeviceSynchronize();
 
 
-    start_build_t = clock();
+    cudaEventRecord(start);
 
     cudaMalloc((void **) &d_coord, (point_data_size)*sizeof(float)*3);
     cudaMalloc((void **) &result, (sample_number)*sizeof(float)*3);
     cudaMemcpy(d_coord,coordinates,point_data_size *sizeof(float )*3 ,cudaMemcpyHostToDevice);
     farthest_point_sampling(point_data_size,sample_number,d_coord,result);
+
+    cudaEventRecord(stop);
     cudaMemcpy(result_cpu,result, sample_number * 3 * sizeof(float), cudaMemcpyDeviceToHost);
-
-    end_t = clock();
-
+    cudaEventSynchronize(stop);
 
     cudaError_t err;
     err = cudaGetLastError();
@@ -73,6 +73,9 @@ int main(int argc, char **argv) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
         exit(-1);
     }
+
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
     //read point
     std::ofstream fout("baseline.txt");
@@ -86,13 +89,11 @@ int main(int argc, char **argv) {
 
     fout.close();
 
-
-    start_t = start_build_t;
     std::cout << "Report:" << std::endl;
     std::cout << "    Type   :baseline(GPU)" << std::endl;
     std::cout << "    Points :" << point_data_size<< std::endl;
     std::cout << "    NPoint :" << sample_number << std::endl;
-    std::cout << "    RunTime:" << (double) (end_t - start_t) << "us" << std::endl;
+    std::cout << "    RunTime:" << milliseconds<< "ms" << std::endl;
     std::cout << "    Param  :" << filename << std::endl;
     std::time_t time_result = std::time(NULL);
     std::cout << "  Timestamp:" << std::asctime(std::localtime(&time_result)) << std::endl;

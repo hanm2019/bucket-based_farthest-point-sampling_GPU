@@ -1,13 +1,13 @@
 //
 // Created by hanm on 22-7-12.
 //
-#include "device_common.cuh"
+#include "../device_common.cuh"
 #include <iostream>
 #include "ctime"
 #include "fstream"
 #include "vector"
-#include "host_common.h"
-#include "baseline_sampling.cuh"
+#include "../host_common.h"
+#include "../baseline_sampling.cuh"
 #include "ball_query_gpu.cuh"
 #include "group_gpu.cuh"
 #include "mlp.cuh"

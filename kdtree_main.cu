@@ -114,10 +114,10 @@ int main(int argc, char **argv) {
     cudaEventElapsedTime(&milliseconds, start, stop);
 
     float milliseconds_build = 0;
-    cudaEventElapsedTime(&milliseconds, start, build_end);
+    cudaEventElapsedTime(&milliseconds_build, start, build_end);
 
     float milliseconds_sample = 0;
-    cudaEventElapsedTime(&milliseconds, build_end, stop);
+    cudaEventElapsedTime(&milliseconds_sample, build_end, stop);
 
     std::cout << "Report:" << std::endl;
     std::cout << "    Type   :kdline(GPU) high:" << kd_high << std::endl;

@@ -18,8 +18,7 @@ using algo_perf_t = cudnnConvolutionFwdAlgoPerf_t;
 #else
 #define checkCUDNN(expression)                                  \
   {                                                             \
-    expression;                                                 \
-    }                                                           \
+    (expression);                                               \
   }
 #endif
 

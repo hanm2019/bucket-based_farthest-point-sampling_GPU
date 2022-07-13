@@ -29,8 +29,7 @@ jobs:
       run: |
         wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin 
         sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-        sudo rm /etc/apt/sources.list.d/cuda.list
-        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
         sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
         sudo apt-get update
         sudo apt-get install libcudnn8=8.4.1.*-1+cuda11.6

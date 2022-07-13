@@ -48,14 +48,20 @@ int main(int argc, char **argv) {
     fin.close();
     const int point_data_size = point_data.size();
 
+    float3 result_cpu[sample_number];
+    int bucketSize = 1 << kd_high;
+
+    cudaEvent_t start, build_end, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&build_end);
+    cudaEventCreate(&stop);
     //warmup
     warmup<<<1, 1>>>();
     cudaDeviceSynchronize();
 
     //build
 
-    start_build_t = clock();
-    int bucketSize = 1 << kd_high;
+    cudaEventRecord(start);
 
     thrust::device_vector<float3> dPoints=point_data;
     float3 * ptr = thrust::raw_pointer_cast(&dPoints[0]);
@@ -64,10 +70,8 @@ int main(int argc, char **argv) {
     float3 * down;
     float3 * result;
 
-
     thrust::device_vector<int> bucketIndexVector(bucketSize);
     thrust::device_vector<int> bucketLengthVector(bucketSize);
-
 
     thrust::fill(bucketIndexVector.begin(), bucketIndexVector.end(), 0);
     thrust::fill(bucketLengthVector.begin(), bucketLengthVector.end(), point_data_size);
@@ -75,12 +79,9 @@ int main(int argc, char **argv) {
     int * bucketIndex = thrust::raw_pointer_cast(&bucketIndexVector[0]);
     int * bucketLength = thrust::raw_pointer_cast(&bucketLengthVector[0]);
 
-
     cudaMalloc((void **)&up, bucketSize*sizeof(float3));
     cudaMalloc((void **)&down, bucketSize*sizeof(float3));
     cudaMalloc((void **)&result, sample_number*sizeof(float3));
-
-
 
     buildKDTree(bucketIndex, bucketLength, ptr, kd_high, up, down, point_data_size);
 
@@ -91,17 +92,15 @@ int main(int argc, char **argv) {
         printf("len: %d\n", leng);
     }
 #endif
-
-    end_build_t = clock();
+    cudaEventRecord(build_end);
     //fps
     sample(bucketIndex, bucketLength, ptr, point_data_size, bucketSize, up, down, sample_number, result);
 
-    end_t = clock();
-    start_t = start_build_t;
-
-    float3 result_cpu[sample_number];
+    cudaEventRecord(stop);
 
     cudaMemcpy((void *)result_cpu,(void *)result, sample_number*sizeof(float3), cudaMemcpyDeviceToHost);
+
+    cudaEventSynchronize(stop);
 
     //read point
     std::ofstream fout("kdtree.txt");
@@ -115,13 +114,22 @@ int main(int argc, char **argv) {
 
     fout.close();
 
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    float milliseconds_build = 0;
+    cudaEventElapsedTime(&milliseconds, start, build_end);
+
+    float milliseconds_sample = 0;
+    cudaEventElapsedTime(&milliseconds, build_end, stop);
 
     std::cout << "Report:" << std::endl;
     std::cout << "    Type   :kdline(GPU) high:" << kd_high << std::endl;
     std::cout << "    Points :" << point_data_size<< std::endl;
     std::cout << "    NPoint :" << sample_number << std::endl;
-    std::cout << "    RunTime:" << (double) (end_t - start_t) << "us" << std::endl;
-    std::cout << "    BuildTime:" << (double) (end_build_t - start_build_t) << "us" << std::endl;
+    std::cout << "    RunTime:" << milliseconds << "ms" << std::endl;
+    std::cout << "    BuildTime:" << milliseconds_build << "ms(" << milliseconds_build*100/milliseconds << "%)" << std::endl;
+    std::cout << "    SampleTime:" << milliseconds_sample << "ms(" << milliseconds_sample*100/milliseconds << "%)" << std::endl;
     std::cout << "    Param  :" << filename << std::endl;
     std::time_t time_result = std::time(NULL);
     std::cout << "  Timestamp:" << std::asctime(std::localtime(&time_result)) << std::endl;

@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     cudaEventCreate(&group_end);
     int k = 20; //每个点的最多邻居数量
     int channelNum = 3;
-    float radius = 100; // 0.5 x 200
+    float radius = 200; // 1 x 200
     float (*coordinates) = new float[point_data_size * 3];
     float *d_coord;
     float *result;

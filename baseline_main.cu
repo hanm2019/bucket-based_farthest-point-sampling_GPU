@@ -4,73 +4,7 @@
 #include "vector"
 #include "host_common.h"
 #include "device_common.cuh"
-
-
-template <unsigned int block_size>
-__global__ void farthest_point_sampling_kernel(int N, int npoint, const float *dataset, float *temp, float * result){
-    __shared__ float dists[block_size];
-    __shared__ int dists_i[block_size];
-
-    int tid = threadIdx.x;
-
-    const int stride = block_size;
-    for(int j = tid; j < N; j += stride){
-        temp[j] = 1e10;
-    }
-    int old = 0;
-    if(tid == 0){
-        result[0] = dataset[old * 3];
-        result[1] = dataset[old * 3 + 1];
-        result[2] = dataset[old * 3 + 2];
-    }
-    __syncthreads();
-    for(int j = 1; j < npoint; j++){
-        float best = -1;
-        int besti = 0;
-        float x1 = dataset[old * 3 + 0];
-        float y1 = dataset[old * 3 + 1];
-        float z1 = dataset[old * 3 + 2];
-        for(int k = tid; k < N; k += stride){
-            float x2, y2, z2;
-            x2 = dataset[k * 3 + 0];
-            y2 = dataset[k * 3 + 1];
-            z2 = dataset[k * 3 + 2];
-            float d = (x2 - x1) * (x2 - x1) +
-                    (y2 - y1) * (y2 - y1) +
-                    (z2 - z1) * (z2 - z1);
-            float d2 = min(d, temp[k]);
-            temp[k] = d2;
-            besti = d2 > best ? k : besti;
-            best = d2 > best ? d2 : best;
-
-        }
-        dists[tid] = best;
-        dists_i[tid] = besti;
-        __syncthreads();
-
-        merge(dists, dists_i, tid, block_size);
-
-        old = dists_i[0];
-        if(tid == 0){
-            result[j * 3] = dataset[old * 3];
-            result[j * 3 + 1] = dataset[old * 3 + 1];
-            result[j * 3 + 2] = dataset[old * 3 + 2];
-        }
-        __syncthreads();
-    }
-
-}
-
-void farthest_point_sampling(int point_data_size, int sample_number, const float *coordinates, float * result) {
-    float * temp;
-    cudaMalloc((void **) &temp, (point_data_size)*sizeof(float));
-    dim3 grid(1);
-    dim3 block(1024);
-    farthest_point_sampling_kernel<1024><<<grid, block>>>(point_data_size,sample_number,coordinates,temp,result);
-    cudaFree(temp);
-}
-
-
+#include "baseline_sampling.cuh"
 
 int main(int argc, char **argv) {
     if (argc != 3) {
@@ -83,9 +17,6 @@ int main(int argc, char **argv) {
 
     int sample_number = atoi(argv[1]);
     std::string filename =  argv[2];
-
-    clock_t start_t, end_t;
-    clock_t start_build_t;
 
     //read point
     std::ifstream fin(filename);
@@ -111,6 +42,9 @@ int main(int argc, char **argv) {
     float * d_coord;
     float * result;
 
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
     for(int i = 0 ;i < point_data_size ; i++){
         coordinates[i*3] = point_data[i].pos[0];
@@ -122,16 +56,16 @@ int main(int argc, char **argv) {
     cudaDeviceSynchronize();
 
 
-    start_build_t = clock();
+    cudaEventRecord(start);
 
     cudaMalloc((void **) &d_coord, (point_data_size)*sizeof(float)*3);
     cudaMalloc((void **) &result, (sample_number)*sizeof(float)*3);
     cudaMemcpy(d_coord,coordinates,point_data_size *sizeof(float )*3 ,cudaMemcpyHostToDevice);
     farthest_point_sampling(point_data_size,sample_number,d_coord,result);
+
+    cudaEventRecord(stop);
     cudaMemcpy(result_cpu,result, sample_number * 3 * sizeof(float), cudaMemcpyDeviceToHost);
-
-    end_t = clock();
-
+    cudaEventSynchronize(stop);
 
     cudaError_t err;
     err = cudaGetLastError();
@@ -139,6 +73,9 @@ int main(int argc, char **argv) {
         fprintf(stderr, "CUDA kernel failed : %s\n", cudaGetErrorString(err));
         exit(-1);
     }
+
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
     //read point
     std::ofstream fout("baseline.txt");
@@ -152,13 +89,11 @@ int main(int argc, char **argv) {
 
     fout.close();
 
-
-    start_t = start_build_t;
     std::cout << "Report:" << std::endl;
     std::cout << "    Type   :baseline(GPU)" << std::endl;
     std::cout << "    Points :" << point_data_size<< std::endl;
     std::cout << "    NPoint :" << sample_number << std::endl;
-    std::cout << "    RunTime:" << (double) (end_t - start_t) << "us" << std::endl;
+    std::cout << "    RunTime:" << milliseconds<< "ms" << std::endl;
     std::cout << "    Param  :" << filename << std::endl;
     std::time_t time_result = std::time(NULL);
     std::cout << "  Timestamp:" << std::asctime(std::localtime(&time_result)) << std::endl;

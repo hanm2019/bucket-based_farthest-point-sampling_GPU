@@ -47,4 +47,4 @@ Please kindly consider citing this repo in your publications if it helps your re
 # Resources
 
 1. [the CPU implementation of FPS](https://github.com/hanm2019/FPS_CPU)
-2. the reference paper: [QuickFPS: Architecture and Algorithm Co-Design for Farthest Point Sampling in Large-Scale Point Clouds](
+2. the reference paper: [QuickFPS: Architecture and Algorithm Co-Design for Farthest Point Sampling in Large-Scale Point Clouds](https://ieeexplore.ieee.org/abstract/document/10122654)

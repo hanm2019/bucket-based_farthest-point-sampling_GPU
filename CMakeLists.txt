@@ -20,29 +20,22 @@ set(CMAKE_CUDA_FLAGS_DEBUG "-g -G")
 set(CMAKE_CUDA_FLAGS_RELEASE  "-O3")
 
 
-
-
-
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     message("add define: DCUDA_ERROR_CHECK")
     add_definitions(-DCUDA_ERROR_CHECK)
     add_definitions(-DCUDA_DEBUG_)
 endif()
 
-add_executable(FPS_KDTree_GPU  kdtree_main.cu host_common.h device_common.cu device_common.cuh kdtree.cu kdtree.cuh)
+add_executable(FPS_KDTree_GPU  src/kdtree_main.cu src/host_common.h src/device_common.cu src/device_common.cuh src/kdtree.cu src/kdtree.cuh)
 
 set_target_properties(FPS_KDTree_GPU PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(FPS_Baseline_GPU baseline_main.cu host_common.h device_common.cu device_common.cuh baseline_sampling.cu baseline_sampling.cuh)
+add_executable(FPS_Baseline_GPU src/baseline_main.cu src/host_common.h src/device_common.cu src/device_common.cuh src/baseline_sampling.cu src/baseline_sampling.cuh)
 
 set_target_properties(FPS_Baseline_GPU PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(PointNet_GPU PointNet2/pointnet2.cu host_common.h device_common.cu device_common.cuh baseline_sampling.cu baseline_sampling.cuh PointNet2/ball_query_gpu.cu PointNet2/ball_query_gpu.cuh PointNet2/group_gpu.cu PointNet2/group_gpu.cuh PointNet2/mlp.cuh)
-
-set_target_properties(PointNet_GPU PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON)
 
 if(DEFINED ENV{CUDA_PATH})
     link_directories($ENV{CUDA_PATH}/lib64)
@@ -54,16 +47,4 @@ if(DEFINED ENV{CUDNN_PATH})
     link_directories($ENV{CUDNN_PATH}/lib64)
 endif()
 
-if(DEFINED ENV{CUDA_PATH})
-    target_include_directories(PointNet_GPU PUBLIC $ENV{CUDA_PATH}/include/)
-    target_include_directories(PointNet_GPU PUBLIC $ENV{CUDA_PATH}/targets/x86_64-linux/include)
-else()
-    target_include_directories(PointNet_GPU PUBLIC /usr/local/cuda/include/)
-    target_include_directories(PointNet_GPU PUBLIC /usr/local/cuda/targets/x86_64-linux/include)
-endif()
 
-if(DEFINED ENV{CUDNN_PATH})
-    target_include_directories(PointNet_GPU PUBLIC $ENV{CUDNN_PATH}/include/)
-endif()
-
-target_link_libraries(PointNet_GPU cudnn)
